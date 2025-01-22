@@ -34,3 +34,37 @@ eye_condition_stats['std_error'] =eye_condition_stats ['std_dev'] / eye_conditio
 # 결과 출력
 print("\nCondition-wise Eye Movement Statistics:")
 print(eye_condition_stats)
+
+from scipy import stats
+
+# 조건별 eye movement 데이터를 리스트로 분리
+eye_movement_by_condition = [
+    eye_df_movement[eye_df_movement['condition'] == cond]['movement_distance']  # 여기에 eye movement 열 이름을 지정
+    for cond in eye_df_movement['condition'].unique()
+]
+
+# ANOVA 수행
+f_stat, p_value = stats.f_oneway(*eye_movement_by_condition)
+
+# 결과 출력
+print(f"\nANOVA Result for Eye Movement by Condition:\nF-statistic: {f_stat:.4f}, p-value: {p_value:.4e}")
+
+# 해석
+if p_value < 0.05:
+    print("There is a significant difference in eye movement between conditions (p < 0.05).")
+else:
+    print("There is no significant difference in eye movement between conditions (p >= 0.05).")
+
+from statsmodels.stats.multicomp import pairwise_tukeyhsd
+
+# Tukey HSD Test 수행
+tukey_result = pairwise_tukeyhsd(
+    endog=eye_df['movement_distance'],  # 여기에 eye movement 열 이름을 지정
+    groups=eye_df['condition'],          # 조건 열
+    alpha=0.05                           # 유의 수준
+)
+
+# 결과 출력
+print("\nTukey HSD Test Results:")
+print(tukey_result)
+
