@@ -1,2 +1,6 @@
 # Driving-Simulator
 Evaluation for Effects on Augmented Reality-based Cue  for Driving Experiences
+
+
+'''Introduction'''
+Recent advancements in autonomous vehicle technology have been rapid, with fully autonomous driving—capable of operating without driver intervention in all situations—attracting significant attention. However, consumers remain skeptical about autonomous driving technology due to concerns over potential system failures in unexpected scenarios. To address this, Lorenz et al. demonstrated that visualizing vehicle maneuver plans using augmented reality (AR) arrows can enhance users' understanding of the system and improve trust.Traditional route cues provide information only about the vehicle’s planned maneuvers but do not include reasons for those maneuvers, which may lead to misunderstandings during sudden maneuver changes. To overcome this limitation, this study proposes a new AR cue, the Route Cue with Alert, which includes an alert feature to convey that maneuver changes are due to hazardous situations.This study aims to evaluate the effectiveness of the proposed AR cue compared to traditional route cues in a virtual reality simulation environment![image](https://github.com/user-attachments/assets/a077830d-0aa7-4a7d-9f65-32dcb02b2b9a)
