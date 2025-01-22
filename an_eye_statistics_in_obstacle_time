@@ -1,0 +1,114 @@
+
+
+
+
+import pandas as pd
+import numpy as np
+from scipy import stats
+from statsmodels.stats.multicomp import pairwise_tukeyhsd
+
+# 장애물 시간 정의
+obstacle_times = [(6, 11), (40, 45), (56, 61), (133, 138)]
+
+
+
+obstacle_summation_results = []
+
+for i, (start, end) in enumerate(obstacle_times, 1):
+    # 장애물 시간 구간 필터링
+    filtered_data = eye_df[(eye_df['Time'] >= start) & (eye_df['Time'] <= end)]
+    
+    # condition과 subject별로 summation
+    obstacle_condition_stats = filtered_data.groupby(['condition', 'subject']).agg(
+        total_distance=('movement_distance', 'sum')
+    ).reset_index()
+    
+    # 장애물 구간 정보 추가
+    obstacle_condition_stats['obstacle_id'] = f"Obstacle_{i}"
+    
+    # 결과 저장
+    obstacle_summation_results.append(obstacle_condition_stats)
+
+# 모든 장애물 구간 결과를 하나의 데이터프레임으로 병합
+all_obstacle_stats = pd.concat(obstacle_summation_results, axis=0)
+# 장애물 없는 구간 데이터 필터링
+non_obstacle_data = eye_df.copy()
+for start, end in obstacle_times:
+    non_obstacle_data = non_obstacle_data[~((non_obstacle_data['Time'] >= start) & (non_obstacle_data['Time'] <= end))]
+
+# 장애물 없는 구간에서 condition과 subject별 summation
+non_obstacle_stats = non_obstacle_data.groupby(['condition', 'subject']).agg(
+    total_distance=('movement_distance', 'sum')
+).reset_index()
+
+# 장애물 없는 구간 정보 추가
+non_obstacle_stats['obstacle_id'] = "Non-Obstacle"
+non_obstacle_stats['total_distance']=non_obstacle_stats['total_distance'] / 26
+# 장애물 있는 구간과 없는 구간 결과 병합
+final_df = pd.concat([all_obstacle_stats, non_obstacle_stats], axis=0)
+
+# 결과 출력
+print("\nSummation of Movement Distance by Condition and Subject:")
+print(final_df)
+
+# 조건별로 그룹화하여 평균 및 표준오차 계산
+final_stats = final_df.groupby(['condition',"obstacle_id"]).agg(
+  # 총 이동 거리
+    mean_distance=('total_distance', 'mean'),  # 평균 이동 거리
+    std_dev=('total_distance', 'std'),         # 표준편차
+    count=('total_distance', 'count')          # 데이터 개수
+).reset_index()
+
+# 표준오차 계산
+final_stats['std_error'] = final_stats['std_dev'] / final_stats['count']**0.5
+
+# 결과 출력
+print("\nObstacle Time Condition-wise Eye Movement Statistics:")
+print(final_stats)
+
+
+
+# Unique obstacle IDs
+unique_obstacle_ids = final_df['obstacle_id'].unique()
+
+# ANOVA 및 Tukey HSD Test를 각 obstacle_id 그룹 내에서 수행
+for obst_id in unique_obstacle_ids:
+    print(f"\n=== Analysis for Obstacle ID: {obst_id} ===")
+    
+    # 특정 obstacle_id에 해당하는 데이터 필터링
+    obst_data = final_df[final_df['obstacle_id'] == obst_id]
+    
+    # 조건별 데이터 리스트로 분리 (ANOVA용)
+    obstacle_eye_movement_by_condition = [
+        obst_data[obst_data['condition'] == cond]['total_distance']
+        for cond in obst_data['condition'].unique()
+    ]
+    
+    # ANOVA 수행
+    f_stat, p_value = stats.f_oneway(*obstacle_eye_movement_by_condition)
+    
+    # ANOVA 결과 출력
+    print(f"\nANOVA Result for {obst_id}:\nF-statistic: {f_stat:.4f}, p-value: {p_value:.4e}")
+    
+    # ANOVA 결과 해석
+    if p_value < 0.05:
+        print("There is a significant difference in eye movement between conditions (p < 0.05).")
+    else:
+        print("There is no significant difference in eye movement between conditions (p >= 0.05).")
+    
+    # Tukey HSD Test 수행
+    tukey_result = pairwise_tukeyhsd(
+        endog=obst_data['total_distance'],  # 종속 변수
+        groups=obst_data['condition'],      # 조건 그룹
+        alpha=0.05                          # 유의 수준
+    )
+    
+    # Tukey HSD Test 결과 출력
+    print("\nTukey HSD Test Results:")
+    print(tukey_result)
+    
+    # Tukey HSD 결과 시각화
+    tukey_result.plot_simultaneous()
+    plt.title(f"Tukey HSD Test for {obst_id}")
+    plt.xlabel("Mean Difference")
+    plt.show()
