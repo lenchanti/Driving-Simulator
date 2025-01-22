@@ -130,3 +130,43 @@ non_obstacle_binned_pivot.to_csv('C:\\Users\\user\\Desktop\\result_file\\non_obs
 print("Obstacle and non-obstacle data have been processed and saved for comparison.")
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+output_dir = 'C:\\Users\\user\\Desktop\\result_file\\obstacle_times_individual\\'
+
+# Ensure the output directory exists
+os.makedirs(output_dir, exist_ok=True)
+
+# Process each obstacle time individually
+for start, end in obstacle_times:
+    # Filter data for the current obstacle time
+    filtered_data = hmd_df[(hmd_df['Time'] >= start) & (hmd_df['Time'] <= end)]
+    
+    # Group by [condition, subject] and sum the relevant columns
+    grouped_data = filtered_data.groupby(['subject', 'condition']).agg({
+        'delta_lpx': 'sum',
+        'delta_lpy': 'sum',
+        'delta_lpz': 'sum',
+        'delta_yaw': 'sum',
+        'delta_roll': 'sum',
+        'delta_pitch': 'sum',
+        'hmd_distance': 'sum'
+    }).reset_index()
+    # Pivot the non-obstacle data for comparison
+    grouped_data = grouped_data.pivot_table(
+        index='subject',
+        columns='condition',
+        values=['delta_yaw', 'delta_roll', 'delta_pitch', 'hmd_distance'],
+        aggfunc='mean'
+    ).reset_index()
+
+    # 정리된 열 이름 적용
+    grouped_data.columns = ['_'.join(col).strip() if isinstance(col, tuple) else col for col in  grouped_data.columns]
+
+    
+    # Generate a filename based on the obstacle time range
+    filename = f'obstacle_time_{start}_{end}_data.csv'
+    
+    # Save the grouped data to a CSV file
+    filepath = os.path.join(output_dir, filename)
+    grouped_data.to_csv(filepath, index=False)
+
+print(f"Obstacle time data files saved to: {output_dir}")
