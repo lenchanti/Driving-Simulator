@@ -1,0 +1,132 @@
+import pandas as pd
+import os
+import matplotlib.pyplot as plt
+import numpy as np
+import seaborn as sns
+from scipy.spatial.transform import Rotation as R
+import scipy.stats as stats
+
+
+# Load the uploaded CSV files
+hmd_result_folder = "C:\\Users\\user\\Desktop\\an_hmd_result"
+
+hmd_df = pd.DataFrame()
+
+for file in os.listdir(hmd_result_folder):
+    hmd_file = pd.read_csv(os.path.join(hmd_result_folder, file))
+    hmd_df = pd.concat([hmd_df, hmd_file], axis=0)
+
+# Display basic information about the combined dataset
+print("Dataset Info:")
+hmd_df.info()
+print("\nHead of the dataset:")
+print(hmd_df.head())
+
+# Group data by subject and condition, then calculate mean values for HMD movement metrics
+grouped_stats = hmd_df.groupby(['subject', 'condition']).agg({
+    'delta_lpx': 'sum',
+    'delta_lpy': 'sum',
+    'delta_lpz': 'sum',
+    'delta_yaw': 'sum',
+    'delta_roll': 'sum',
+    'delta_pitch': 'sum',
+    'hmd_distance': 'sum'
+}).reset_index()
+import pandas as pd
+
+# 데이터 예시 (이미 로드된 DataFrame이라고 가정)
+# df = pd.read_csv('your_data.csv')
+
+# condition에 따른 열 생성 (pivot_table 사용)
+pivot_df = grouped_stats.pivot_table(
+    index='subject',                # 행: subject
+    columns='condition',            # 열: condition
+    values=['delta_yaw', 'delta_roll', 'delta_pitch', 'hmd_distance'],  # 값
+    aggfunc='mean'                  # 동일 subject 내 평균 계산 (중복 데이터 있을 경우)
+).reset_index()
+
+# 열 구조를 보기 쉽게 정리
+pivot_df.columns = ['_'.join(col).strip() if isinstance(col, tuple) else col for col in pivot_df.columns]
+
+# 결과 출력
+print(pivot_df)
+
+pivot_df.to_csv("C:\\Users\\user\\Desktop\\result_file"+"\\"+"hmd_sum.csv",index=False)
+# __________________________________________________________________________________________________________________
+
+
+
+
+
+
+obstacle_times = [(6, 11), (40, 45), (56, 61), (133, 138)]
+# Filter data for obstacle times
+obstacle_data = pd.concat([
+    hmd_df[(hmd_df['Time'] >= start) & (hmd_df['Time'] <= end)]
+    for start, end in obstacle_times
+])
+
+# Filter data for non-obstacle times
+non_obstacle_data = hmd_df.copy()
+for start, end in obstacle_times:
+    non_obstacle_data = non_obstacle_data[~((non_obstacle_data['Time'] >= start) & (non_obstacle_data['Time'] <= end))]
+
+# Process obstacle time data
+obstacle_data = obstacle_data.groupby(['subject', 'condition']).agg({
+    'delta_lpx': 'sum',
+    'delta_lpy': 'sum',
+    'delta_lpz': 'sum',
+    'delta_yaw': 'sum',
+    'delta_roll': 'sum',
+    'delta_pitch': 'sum',
+    'hmd_distance': 'sum'
+}).reset_index()
+
+obstacle_data = obstacle_data.pivot_table(
+    index='subject',
+    columns='condition',
+    values=['delta_yaw', 'delta_roll', 'delta_pitch', 'hmd_distance'],
+    aggfunc='mean'
+).reset_index()
+
+# 정리된 열 이름 적용
+obstacle_data.columns = ['_'.join(col).strip() if isinstance(col, tuple) else col for col in obstacle_data.columns]
+
+# Save the obstacle time data
+obstacle_data.to_csv('C:\\Users\\user\\Desktop\\result_file\\obstacle_time_data.csv', index=False)
+
+# Process non-obstacle time data
+# Define 5-second bins for non-obstacle data
+
+
+# Group by 5-second bins, subject, and condition
+non_obstacle_binned = non_obstacle_data.groupby(['subject', 'condition']).agg({
+    'delta_lpx': 'sum',
+    'delta_lpy': 'sum',
+    'delta_lpz': 'sum',
+    'delta_yaw': 'sum',
+    'delta_roll': 'sum',
+    'delta_pitch': 'sum',
+    'hmd_distance': 'sum'
+}).reset_index()
+
+columns_to_divide = ['delta_lpx', 'delta_lpy', 'delta_lpz', 'delta_yaw', 'delta_roll', 'delta_pitch', 'hmd_distance']
+non_obstacle_binned[columns_to_divide] = non_obstacle_binned[columns_to_divide] / 26
+
+# Pivot the non-obstacle data for comparison
+non_obstacle_binned_pivot = non_obstacle_binned.pivot_table(
+    index='subject',
+    columns='condition',
+    values=['delta_yaw', 'delta_roll', 'delta_pitch', 'hmd_distance'],
+    aggfunc='mean'
+).reset_index()
+
+# 정리된 열 이름 적용
+non_obstacle_binned_pivot.columns = ['_'.join(col).strip() if isinstance(col, tuple) else col for col in non_obstacle_binned_pivot.columns]
+
+# Save the processed non-obstacle data
+non_obstacle_binned_pivot.to_csv('C:\\Users\\user\\Desktop\\result_file\\non_obstacle_time_binned_data.csv', index=False)
+
+print("Obstacle and non-obstacle data have been processed and saved for comparison.")
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
