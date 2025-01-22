@@ -1,0 +1,36 @@
+import pandas as pd
+import os
+import csv
+import matplotlib.pyplot as plt
+import numpy as np
+from mpl_toolkits.mplot3d import Axes3D
+
+import seaborn as sns
+
+result_folder = "C:\\Users\\user\\Desktop\\result\\eye_result"
+
+eye_df =pd.DataFrame()
+for result_files in os.listdir(result_folder):
+    eye_file = pd.read_csv(os.path.join(result_folder, result_files)).drop(['GazedObjName', 'GazedObjTag', 's_GazedObjsName',
+           's_GazedObjsTag'],axis=1)
+    eye_df = pd.concat([eye_df , eye_file], axis=0)
+
+eye_df_movement = eye_df.groupby(['subject', 'condition']).agg({
+    'movement_distance': 'sum'
+}).reset_index()
+eye_condition_stats = eye_df_movement.groupby(['condition']).agg(
+    s=('movement_distance', 'sum'),  # 여기에 eye movement를 나타내는 열 이름을 지정
+    total_distance=('movement_distance', 'sum'),   # 총 이동 거리
+    mean_distance=('movement_distance', 'mean'),  # 평균 이동 거리
+    std_dev=('movement_distance', 'std'),         # 표준편차
+    count=('movement_distance', 'count')          # 데이터 개수
+).reset_index()
+
+
+# 조건별로 groupby하여 평균 및 표준오차 계산
+eye_condition_stats['std_error'] =eye_condition_stats ['std_dev'] / eye_condition_stats['count']**0.5
+
+
+# 결과 출력
+print("\nCondition-wise Eye Movement Statistics:")
+print(eye_condition_stats)
