@@ -1,0 +1,37 @@
+#change file type
+#유니티 application으로 hmd에 저장된 데이터 타입을 읽을 수 있게 utf-8로 바꾸기
+import pandas as pd
+import os
+import csv
+import matplotlib.pyplot as plt
+import numpy as np
+from mpl_toolkits.mplot3d import Axes3D
+
+import seaborn as sns
+
+#eye data  hmd data이름에 따라서 불러오기
+
+#eye_data인 파일만 가져오기
+
+# folder_path="C:\\Users\\user\\Desktop\\data\\pre"
+folder_path="C:\\Users\\user\\Desktop\\raw_data"
+
+
+folder_path="C:\\Users\\user\\Desktop\\driving_simulator_실험\\p8'"
+
+#folder_path="C:\\Users\\user\\Desktop\\an_dv_data\\p23'"
+#eye_data file 파일 path들
+
+eye_data=[f for f in os.listdir(folder_path) if "eye_data" in f ]
+
+for file_name in eye_data:
+    eye_data_dfs=pd.read_csv(folder_path+"\\"+file_name, encoding='utf-16')
+    eye_data_dfs.columns =eye_data_dfs.columns.str.replace(' ', '')
+    eye_data_dfs.to_csv(folder_path+"\\"+file_name,encoding='utf-8', index=False)    
+
+hmd_data=[f for f in os.listdir(folder_path) if "hmd_data" in f ]
+
+for file_name in hmd_data:
+    eye_data_dfs=pd.read_csv(folder_path+"\\"+file_name, encoding='utf-16')
+    eye_data_dfs.columns =eye_data_dfs.columns.str.replace(' ', '')
+    eye_data_dfs.to_csv(folder_path+"\\"+file_name,encoding='utf-8', index=False)    
