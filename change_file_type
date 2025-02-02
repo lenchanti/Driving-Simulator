@@ -6,7 +6,7 @@ import csv
 import matplotlib.pyplot as plt
 import numpy as np
 from mpl_toolkits.mplot3d import Axes3D
-
+///from utf-16 to utf-8///
 import seaborn as sns
 
 #eye data  hmd data이름에 따라서 불러오기
