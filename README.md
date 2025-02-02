@@ -21,6 +21,8 @@ To address this, **Lorenz et al.** demonstrated that visualizing vehicle maneuve
 ---
 
 ## Objective
+### **Cue condition**
+ ![Cue condition](https://github.com/lenchanti/Driving-Simulator/blob/main/cue%20condition.png)
 This study aims to evaluate the effectiveness of the **Route Cue with Alert** compared to traditional route cues in a **virtual reality (VR) simulation environment**. Key objectives include:
 1. Enhancing user comprehension of maneuver decisions.
 2. Increasing trust in autonomous vehicle systems.
