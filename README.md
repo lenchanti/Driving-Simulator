@@ -50,18 +50,11 @@ The **Route Cue with Alert** aims to bridge the gap between user expectations an
 - Building trust through clear, hazard-specific visualizations.
 - Informing future human-machine interface designs.
 
----
-
-## Significance
-The **Route Cue with Alert** aims to bridge the gap between user expectations and system behavior by:
-- Improving transparency in autonomous driving systems.
-- Building trust through clear, hazard-specific visualizations.
-- Informing future human-machine interface designs.
 
 ---
 
 ## Results
- 
+ ![HMD rotation for each condition with highlighted obstacle alert area](https://github.com/lenchanti/Driving-Simulator/blob/main/result%20of%20hmd%20rotation%20pilot.png)
 ---
 
 ## How to Cite
