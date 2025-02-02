@@ -56,6 +56,12 @@ The **Route Cue with Alert** aims to bridge the gap between user expectations an
 ## Results
 ### **HMD rotation for each condition with highlighted obstacle alert area**
  ![HMD rotation for each condition with highlighted obstacle alert area](https://github.com/lenchanti/Driving-Simulator/blob/main/result%20of%20hmd%20rotation%20pilot.png)
+ ### **summed HMD rotaion values during vehicle operation time**
+ ![summed HMD rotaion values during vehicle operation time](https://github.com/lenchanti/Driving-Simulator/blob/main/summed%20hmd%20rotaion%20values%20during%20vehicle%20operation%20time.png)
+  ### **summed HMD rotation values during obstacle time**
+ ![summed hmd rotation values during obstacle time](https://github.com/lenchanti/Driving-Simulator/blob/main/summed%20hmd%20rotation%20values%20during%20obstacle%20time.png)
+  ### **summed HMD rotation vlaues during non-obstacle time**
+ ![summed hmd rotation vlaues during non-obstacle time](https://github.com/lenchanti/Driving-Simulator/blob/main/summed%20hmd%20rotation%20vlaues%20during%20non-obstacle%20time.png)
 ---
 
 ## How to Cite
