@@ -1,0 +1,342 @@
+import pandas as pd
+import os
+import csv
+import matplotlib.pyplot as plt
+import numpy as np
+import seaborn as sns
+from scipy.spatial.transform import Rotation as R
+#hmd data이름에 따라서 불러오기
+
+#hmd_data인 파일만 가져오기
+
+folders_path="C:\\Users\\user\\Desktop\\an_dv_data"
+ 
+time_line=pd.DataFrame({"Time":[]})
+count=0
+for j in range(0,150):
+    for i in range(1,60+1):
+        count+=1
+        time_line.loc[count-1]=(j+i*0.016)
+        
+
+df=pd.DataFrame()
+no_cue_df=pd.DataFrame()
+green_df=pd.DataFrame()
+red_df=pd.DataFrame()
+eye_df=pd.DataFrame()
+
+result_folder = "C:\\Users\\user\\Desktop\\result\\hmd_result"
+
+def delete_files(folders):
+# 폴더 내 모든 파일 삭제
+    for file in os.listdir(folders):
+        file_path = os.path.join(folders, file)
+        if os.path.isfile(file_path):  # 파일인지 확인
+            os.remove(file_path)  # 파일 삭제
+        # print(f"Deleted: {result_folder}")
+
+    print("모든 파일이 삭제되었습니다.")
+
+hmd_result_folder="C:\\Users\\user\\Desktop\\an_hmd_result"
+
+delete_files(result_folder)
+delete_files(hmd_result_folder)
+
+
+
+def calculate_angle_difference(a, b):
+    """
+    최소 각도 차이 계산 (-180도 ~ 180도)
+    """
+    diff = (b - a + 180) % 360 - 180
+    return diff
+#회전 차이를 최소 각도 차이 -180~180도로 제한하여 깁싱ㅇ락(gimbal Lock)이나 각도 값"튐"문제를 방지
+
+
+for folders in os.listdir(folders_path):
+    folder_path=folders_path+"\\"+folders
+    
+
+#주의해야할 점:cue인경우 no cue인 경우 cue+alert인 경우 구분하기
+    hmd_data=[f for f in os.listdir(folder_path) if "hmd_data" in f ]
+
+# 각 파일 처리
+    for file_name in hmd_data:
+    # 데이터 읽기)   
+
+        if "no_cue" in file_name:
+            hmd_df = pd.read_csv(folder_path+"\\"+file_name, encoding='utf-8')
+            hmd_df = hmd_df.iloc[3:-3, ]  # 데이터 전처리 (처음 3줄과 마지막 3줄 제외)  
+            hmd_df["condition"]="no_cue"
+            hmd_df["subject"]=folders
+            base_name = file_name.split("._AutoV")[0]
+            match_file=[file for file in os.listdir(folder_path) if base_name in file and "eye_data" in file]
+            eye_df=pd.read_csv(folder_path+"\\"+match_file[0], encoding='utf-8')
+            hmd_df["Time"]=eye_df["Time"]
+            
+            hmd_df.to_csv("C:\\Users\\user\\Desktop\\result\\hmd_result"+"\\"+file_name,index=False)
+            
+            # no_cue_df=pd.concat([no_cue_df,hmd_df],axis=0,ignore_index=True)
+        
+        
+        elif "green" in file_name:
+            hmd_df = pd.read_csv(folder_path+"\\"+file_name, encoding='utf-8')
+            hmd_df = hmd_df.iloc[3:-3, ]  # 데이터 전처리 (처음 3줄과 마지막 3줄 제외)  
+            hmd_df["condition"]="green_cue"
+            hmd_df["subject"]=folders
+            base_name = file_name.split("._AutoV")[0]
+            match_file=[file for file in os.listdir(folder_path) if base_name in file and "eye_data" in file]
+            eye_df=pd.read_csv(folder_path+"\\"+match_file[0], encoding='utf-8')
+            hmd_df["Time"]=eye_df["Time"]
+            hmd_df.to_csv("C:\\Users\\user\\Desktop\\result\\hmd_result"+"\\"+file_name,index=False)
+            
+            # green_df=pd.concat([green_df,hmd_df],axis=0,ignore_index=True)
+
+        elif "red" in file_name:
+            hmd_df = pd.read_csv(folder_path+"\\"+file_name, encoding='utf-8')
+            hmd_df = hmd_df.iloc[3:-3, ]  # 데이터 전처리 (처음 3줄과 마지막 3줄 제외)  
+            hmd_df["condition"]="red_cue"
+            hmd_df["subject"]=folders
+            base_name = file_name.split("._AutoV")[0]
+            match_file=[file for file in os.listdir(folder_path) if base_name in file and "eye_data" in file]
+            eye_df=pd.read_csv(folder_path+"\\"+match_file[0], encoding='utf-8')
+            hmd_df["Time"]=eye_df["Time"]
+            hmd_df.to_csv("C:\\Users\\user\\Desktop\\result\\hmd_result"+"\\"+file_name,index=False)
+            
+            # red_df=pd.concat([red_df,hmd_df],axis=0,ignore_index=True)
+
+
+
+result_folder = "C:\\Users\\user\\Desktop\\result\\hmd_result"
+
+for file in os.listdir(result_folder):
+
+        hmd_df=pd.read_csv(result_folder+"\\"+file,encoding="utf-8")
+    # delta 값 계산 (회전 및 위치 변화량)
+
+        hmd_df["delta_lpx"] = hmd_df["HMD.lpx"].diff().abs() 
+        hmd_df["delta_lpy"] = hmd_df["HMD.lpy"].diff().abs() 
+        hmd_df["delta_lpz"] = hmd_df["HMD.lpz"].diff().abs() 
+    
+    
+    
+    #쿼터니언에서 오일러 각도 변환
+        # Unity에서 가져온 쿼터니언 (w, x, y, z) → (x, y, z, w)로 순서 변환
+        quaternions = hmd_df[["HMD.lrx", "HMD.lry", "HMD.lrz", "HMD.lrw"]].to_numpy()
+        quaternions = quaternions[:, [1, 2, 3, 0]]  # (w, x, y, z) → (x, y, z, w) 변경
+        euler_angles = R.from_quat(quaternions).as_euler("xyz", degrees=True)  # 오일러 각도 (XYZ 순서)(degree 도 단위로 변환)
+
+    # 오일러 각도를 데이터프레임에 추가
+        hmd_df["Yaw"], hmd_df["Pitch"], hmd_df["Roll"] = euler_angles.T
+
+    # 회전 및 위치 변화량 계산
+  # 회전 변화량 계산 (최소 각도 차이 활용)
+        hmd_df["delta_yaw"] = hmd_df["Yaw"].diff().apply(lambda x: calculate_angle_difference(0, x)).abs()
+        hmd_df["delta_pitch"] = hmd_df["Pitch"].diff().apply(lambda x: calculate_angle_difference(0, x)).abs()
+        hmd_df["delta_roll"] = hmd_df["Roll"].diff().apply(lambda x: calculate_angle_difference(0, x)).abs()
+        hmd_df["hmd_distance"] = np.sqrt(hmd_df["delta_yaw"]**2 + hmd_df["delta_pitch"]**2 + hmd_df["delta_roll"]**2)
+        
+    # 그래프 데이터 준비
+        df = hmd_df[['Time', 'delta_lpx', 'delta_lpy', 'delta_lpz', 'delta_yaw', 'delta_roll', 'delta_pitch',"hmd_distance"]]
+        df=pd.concat([df,time_line],ignore_index=True)
+        df=df.sort_values(by="Time")
+        df=df.interpolate(method="linear",axis=0).ffill().bfill()
+        df=df.reset_index()
+        df=df.sort_values(by="index")
+        df=df.set_index(["index"])
+        df=df.iloc[-len(time_line):,:]
+        df["condition"]=hmd_df["condition"][0]
+        df["subject"]=hmd_df["subject"][0]
+        df.to_csv("C:\\Users\\user\\Desktop\\an_hmd_result"+"\\"+file,index=False)
+
+##########################################################################################################################
+# hmd_result_folder="C:\\Users\\user\\Desktop\\an_hmd_result"
+# for file in os.listdir(hmd_result_folder):
+#     df=pd.read_csv(hmd_result_folder+"\\"+file)
+    
+#     plt.figure(figsize=(12, 6))
+
+#     # 회전 변화량
+#     plt.plot(df['Time'], df['delta_yaw'], label='Delta Rotation X', color='tab:blue', linestyle='-')
+#     plt.plot(df['Time'], df['delta_pitch'], label='Delta Rotation Y', color='tab:blue', linestyle='--')
+#     plt.plot(df['Time'], df['delta_roll'], label='Delta Rotation Z', color='tab:blue', linestyle=':')
+#     # plt.plot(df['Time'], df['delta_lrw'], label='Delta Position W', color='tab:pink', linestyle='dotted')
+
+#     # 위치 변화량
+#     plt.plot(df['Time'], df['delta_lpx'], label='Delta Position X', color='tab:pink', linestyle='-')
+#     plt.plot(df['Time'], df['delta_lpy'], label='Delta Position Y', color='tab:pink', linestyle='--')
+#     plt.plot(df['Time'], df['delta_lpz'], label='Delta Position Z', color='tab:pink', linestyle=':')
+    
+#     obstacle_times = [(6, 12), (40, 43), (58, 60), (133, 141)] 
+#     # 장애물 시간 강조 표시
+#     for start, end in obstacle_times: 
+#        plt.axvspan(start, end, color='gray', alpha=0.3, label='Obstacle Area' if start == obstacle_times[0][0] else "")
+
+#     # 그래프 설정
+#     plt.xlabel('Time (s)')
+#     plt.ylabel('Angle / Position Change (degree)')
+#     plt.title(f'HMD Changes for {file.split("._AutoV_eye_")[1].split("_hmd")[0]} with Highlighted Obstacle Alert Area')
+#     plt.ylim(0, 4)
+#     plt.legend()
+#     plt.grid()
+#     plt.tight_layout()
+#     plt.show()
+
+
+
+
+#  전체 값 경향 관찰
+
+# ___________________________________________________________________________________________________________________________        
+num=0
+green_df=pd.DataFrame()
+red_df=pd.DataFrame()
+no_cue_df=pd.DataFrame() 
+green_file=pd.DataFrame()
+red_file=pd.DataFrame()
+no_cue_file=pd.DataFrame()        
+no_cue_num=0
+green_num=0
+red_num=0
+hmd_result_folder="C:\\Users\\user\\Desktop\\an_hmd_result"
+for file in os.listdir(hmd_result_folder):
+    
+    
+        num+=1
+        if "no_cue" in file:
+            no_cue_file=pd.read_csv(hmd_result_folder+"\\"+file)
+            no_cue_file=no_cue_file.iloc[:,:-2]
+            if no_cue_num==0:
+                no_cue_df=+no_cue_file
+              
+            else:
+                no_cue_df=no_cue_df+no_cue_file
+            no_cue_num+=1
+         
+        
+        elif "green" in file:
+            green_file=pd.read_csv(hmd_result_folder+"\\"+file)
+            green_file=green_file.iloc[:,:-2]
+            if green_num==0:
+                green_df=green_file
+                
+            else:
+                green_df=green_df+green_file
+            green_num+=1
+
+        elif "red" in file:
+            red_file=pd.read_csv(hmd_result_folder+"\\"+file)
+            red_file=red_file.iloc[:,:-2]
+            if red_num==0:
+                red_df=red_file
+                
+            else:
+                red_df=red_df+red_file
+            red_num+=1
+        
+no_cue_df=no_cue_df/(no_cue_num)       
+red_df=red_df/(red_num)     
+green_df=green_df/(green_num)     
+
+no_cue_df["condition"]="no_cue"
+green_df["condition"]="green"
+red_df["condition"]="red"
+# df=pd.DataFrame()
+# df=pd.concat([no_cue_df,green_df,red_df])  
+
+
+
+
+
+ #########################
+plt.plot(no_cue_df['Time'], no_cue_df['delta_yaw'], label='Delta Rotation X', color='orange', linestyle='-')
+plt.plot(no_cue_df['Time'], no_cue_df['delta_pitch'], label='Delta Rotation Y', color='orange', linestyle='--')
+plt.plot(no_cue_df['Time'], no_cue_df['delta_roll'], label='Delta Rotation Z', color='orange', linestyle=':')
+# plt.plot(no_cue_df['Time'], no_cue_df['delta_lrw'], label='Delta Position W', color='#868e96', linestyle='dotted')
+    # 위치 변화량
+plt.plot(no_cue_df['Time'], no_cue_df['delta_lpx'], label='Delta Position X', color='tab:pink', linestyle='-')
+plt.plot(no_cue_df['Time'], no_cue_df['delta_lpy'], label='Delta Position Y', color='tab:pink', linestyle='--')
+plt.plot(no_cue_df['Time'], no_cue_df['delta_lpz'], label='Delta Position Z', color='tab:pink', linestyle=':')
+# obstacle_times = [(6, 12), (40, 43), (58, 60), (133, 141)]
+obstacle_times = [(6, 11), (40, 45), (56, 61), (133, 138)]
+    # 장애물 시간 강조 표시
+for start, end in obstacle_times: 
+    plt.axvspan(start, end, color='gray', alpha=0.3, label='Obstacle Area' if start == obstacle_times[0][0] else "")
+
+    # 그래프 설정
+plt.xlabel('Time (s)')
+plt.ylabel('Angle / Position Change (degree)')
+plt.title(f'HMD Changes for No Cue with Highlighted Obstacle Alert Area')
+plt.ylim(0, 2.5)
+plt.legend()
+plt.grid()
+plt.tight_layout()
+plt.show()
+
+
+
+##########
+plt.plot(green_df['Time'], green_df['delta_yaw'], label='Delta Rotation X', color='#3c7a6e', linestyle='-')
+plt.plot(green_df['Time'], green_df['delta_pitch'], label='Delta Rotation Y', color='#3c7a6e', linestyle='--')
+plt.plot(green_df['Time'], green_df['delta_roll'], label='Delta Rotation Z', color='#3c7a6e', linestyle=':')
+# plt.plot(green_df['Time'], green_df['delta_lrw'], label='Delta Position W', color='#3c7a6e', linestyle='dotted')
+
+    # 위치 변화량
+plt.plot(green_df['Time'], green_df['delta_lpx'], label='Delta Position X', color='tab:pink', linestyle='-')
+plt.plot(green_df['Time'], green_df['delta_lpy'], label='Delta Position Y', color='tab:pink', linestyle='--')
+plt.plot(green_df['Time'], green_df['delta_lpz'], label='Delta Position Z', color='tab:pink', linestyle=':')
+
+# obstacle_times = [(6, 12), (40, 43), (58, 60), (133, 141)]
+obstacle_times = [(6, 11), (40, 45), (56, 61), (133, 138)]
+    # 장애물 시간 강조 표시
+for start, end in obstacle_times: 
+    plt.axvspan(start, end, color='gray', alpha=0.3, label='Obstacle Area' if start == obstacle_times[0][0] else "")
+
+    # 그래프 설정
+plt.xlabel('Time (s)')
+plt.ylabel('Angle / Position Change (degree)')
+plt.title(f'HMD Changes for Route Cue with Highlighted Obstacle Alert Area')
+plt.ylim(0, 2.5)
+plt.legend()
+plt.grid()
+plt.tight_layout()
+plt.show()
+
+
+
+##########
+plt.plot(red_df['Time'], red_df['delta_yaw'], label='Delta Rotation X', color='tab:red', linestyle='-')
+plt.plot(red_df['Time'], red_df['delta_pitch'], label='Delta Rotation Y', color='tab:red', linestyle='--')
+plt.plot(red_df['Time'], red_df['delta_roll'], label='Delta Rotation Z', color='tab:red', linestyle=':')
+# plt.plot(red_df['Time'], red_df['delta_lrw'], label='Delta Position W', color='tab:red', linestyle='dotted')
+    # 위치 변화량
+plt.plot(red_df['Time'], red_df['delta_lpx'], label='Delta Position X', color='tab:pink', linestyle='-')
+plt.plot(red_df['Time'], red_df['delta_lpy'], label='Delta Position Y', color='tab:pink', linestyle='--')
+plt.plot(red_df['Time'], red_df['delta_lpz'], label='Delta Position Z', color='tab:pink', linestyle=':')
+
+# obstacle_times = [(6, 12), (40, 43), (58, 60), (133, 141)]
+obstacle_times = [(6, 11), (40, 45), (56, 61), (133, 138)]
+    # 장애물 시간 강조 표시
+for start, end in obstacle_times: 
+    plt.axvspan(start, end, color='gray', alpha=0.3, label='Obstacle Area' if start == obstacle_times[0][0] else "")
+
+    # 그래프 설정
+plt.xlabel('Time (s)')
+plt.ylabel('Angle / Position Change (degree)')
+plt.title(f'HMD Changes for Route cue with Alert with Highlighted Obstacle Alert Area')
+plt.ylim(0, 2.5)
+plt.legend()
+plt.grid()
+plt.tight_layout()
+plt.show()
+
+
+no_cue_df.iloc[:,1:-1].sum()
+green_df.iloc[:,1:-1].sum()
+red_df.iloc[:,1:-1].sum()
+
+
+no_cue_df_hmd=no_cue_df
+green_df_hmd=green_df
+red_df_hmd=red_df
+
