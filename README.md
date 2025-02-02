@@ -54,7 +54,7 @@ The **Route Cue with Alert** aims to bridge the gap between user expectations an
 ---
 
 ## Results
-# HMD rotation for each condition with highlighted obstacle alert area
+### **HMD rotation for each condition with highlighted obstacle alert area**
  ![HMD rotation for each condition with highlighted obstacle alert area](https://github.com/lenchanti/Driving-Simulator/blob/main/result%20of%20hmd%20rotation%20pilot.png)
 ---
 
