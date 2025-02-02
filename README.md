@@ -52,12 +52,16 @@ The **Route Cue with Alert** aims to bridge the gap between user expectations an
 
 ---
 
-## Repository Contents
-- `src/`: Source code for VR simulation and AR cue implementation.
-- `docs/`: Documentation and research background.
-- `results/`: Evaluation metrics and analysis.
-- `LICENSE`: Licensing information.
+## Significance
+The **Route Cue with Alert** aims to bridge the gap between user expectations and system behavior by:
+- Improving transparency in autonomous driving systems.
+- Building trust through clear, hazard-specific visualizations.
+- Informing future human-machine interface designs.
 
+---
+
+## Results
+ 
 ---
 
 ## How to Cite
